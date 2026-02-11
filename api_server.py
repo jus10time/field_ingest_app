@@ -13,7 +13,10 @@ from datetime import datetime, timezone
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from configparser import ConfigParser
-from processor import generate_pdf_report
+try:
+    from processor import generate_pdf_report
+except ImportError:
+    generate_pdf_report = None
 
 # Will be set by start_api_server()
 _config = None
@@ -204,6 +207,9 @@ class IngestAPIHandler(BaseHTTPRequestHandler):
 
     def _handle_report(self):
         """Generate and return path to PDF report."""
+        if not generate_pdf_report:
+            self._send_json_response({"error": "PDF report generation not available"}, 501)
+            return
         history_path = os.path.join(_base_dir, _config['Paths']['history_file'])
         output_folder = os.path.expanduser(_config['Paths']['output'])
 
